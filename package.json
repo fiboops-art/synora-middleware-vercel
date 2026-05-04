@@ -1,0 +1,19 @@
+{
+  "name": "synora-middleware-vercel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "vercel dev",
+    "lint": "node -c api/middleware/guardian/validate.js && node -c src/lib/openclawGuardian.js && node -c src/lib/audit.js && node -c src/lib/http.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "vercel": "^39.0.0"
+  }
+}

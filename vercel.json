@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/middleware/guardian/validate",
+      "destination": "/api/middleware/guardian/validate"
+    }
+  ]
+}
