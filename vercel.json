@@ -3,6 +3,14 @@
     {
       "source": "/middleware/guardian/validate",
       "destination": "/api/middleware/guardian/validate"
+    },
+    {
+      "source": "/billing/success-fee/payment_compensated",
+      "destination": "/api/billing/success-fee/payment_compensated"
+    },
+    {
+      "source": "/portal/terms/success-fee/accept",
+      "destination": "/api/portal/terms/success-fee/accept"
     }
   ]
 }
