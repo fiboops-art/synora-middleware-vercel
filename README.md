@@ -8,6 +8,10 @@ E um endpoint de billing (success fee):
 
 - `POST /billing/success-fee/payment_compensated`
 
+E um endpoint de aceite do termo (portal):
+
+- `POST /portal/terms/success-fee/accept`
+
 O body inclui `stage`:
 
 - `A` (onboarding/LGPD)
@@ -154,3 +158,15 @@ curl -sS -X POST "https://synora-guardian.vercel.app/billing/success-fee/payment
 ```
 
 > Nota: neste MVP o endpoint calcula `feeAgora` e retorna no campo `data`. A cobrança real do credor (invoice/charge) é integração futura.
+
+### Portal — aceite do termo (success fee)
+
+```bash
+curl -sS -X POST "https://synora-guardian.vercel.app/portal/terms/success-fee/accept" \
+  -H 'content-type: application/json' \
+  -d '{
+    "creditor_id":"portal_demo",
+    "term_version":"success_fee_v1",
+    "accepted_at":"2026-05-07T12:00:00.000Z"
+  }'
+```
