@@ -4,6 +4,10 @@ API mínima para rodar na Vercel (free) com um endpoint único:
 
 - `POST /middleware/guardian/validate`
 
+E um endpoint de billing (success fee):
+
+- `POST /billing/success-fee/payment_compensated`
+
 O body inclui `stage`:
 
 - `A` (onboarding/LGPD)
@@ -133,3 +137,20 @@ if (out.status !== 'APPROVED' && out.status !== 'APPROVED_WITH_ADJUSTMENTS') {
   // bloquear UI / pedir revisão humana
 }
 ```
+
+### Billing — payment_compensated (success fee)
+
+```bash
+curl -sS -X POST "https://synora-guardian.vercel.app/billing/success-fee/payment_compensated" \
+  -H 'content-type: application/json' \
+  -d '{
+    "agreement_id":"AGR-123",
+    "payment_status":"payment_compensated",
+    "payment_amount":217,
+    "recovered_total_compensated":5217,
+    "fee_already_charged":0,
+    "hasHumanAssistance":true
+  }'
+```
+
+> Nota: neste MVP o endpoint calcula `feeAgora` e retorna no campo `data`. A cobrança real do credor (invoice/charge) é integração futura.
