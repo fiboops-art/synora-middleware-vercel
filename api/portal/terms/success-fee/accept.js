@@ -126,11 +126,15 @@ module.exports = async function handler(req, res) {
   try {
     const latency = Date.now() - start;
 
+    const receiptPayload = `${creditor_id}|${term_version}|${accepted_at}|${correlationId}`;
+    const receipt_id = crypto.createHash('sha256').update(receiptPayload).digest('hex');
+
     audit('portal.terms.success_fee.accepted', {
       correlationId,
       creditor_id,
       term_version,
       accepted_at,
+      receipt_id,
       latency_ms: latency,
       rules_triggered: ['term_accepted'],
     });
@@ -146,7 +150,7 @@ module.exports = async function handler(req, res) {
         safe_content: null,
         audit_log: { rules_triggered: ['term_accepted'], decision_path: path },
         correlation_id: correlationId,
-        data: { creditor_id, term_version, accepted_at },
+        data: { creditor_id, term_version, accepted_at, receipt_id },
       }),
       { 'x-latency-ms': String(latency) },
     );
@@ -173,4 +177,3 @@ module.exports = async function handler(req, res) {
     );
   }
 };
-
