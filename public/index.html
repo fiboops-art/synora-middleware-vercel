@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Synora Guardian</title>
+    <style>
+      :root { color-scheme: light; }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+        background: #f8fafc;
+        color: #0f172a;
+      }
+      .wrap { max-width: 860px; margin: 0 auto; padding: 48px 20px; }
+      .card {
+        background: rgba(255,255,255,0.9);
+        border: 1px solid rgba(15,23,42,0.08);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(2,8,23,0.06);
+      }
+      .brand { display:flex; align-items:center; gap:12px; margin-bottom: 14px; }
+      .brand img { width: 34px; height: 34px; }
+      .muted { color: rgba(15,23,42,0.72); }
+      code { background: rgba(2,8,23,0.06); padding: 2px 6px; border-radius: 8px; }
+      a { color: #0f172a; }
+      ul { margin: 10px 0 0 18px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <div class="brand">
+          <img src="/synora-logo.svg" alt="Synora" />
+          <div>
+            <div style="font-weight:700">Synora Guardian</div>
+            <div class="muted">Hard-gate de validação (fail-closed) para estágios A/B/C/D</div>
+          </div>
+        </div>
+
+        <div class="muted" style="margin-bottom:12px">Endpoint principal:</div>
+        <div style="font-weight:600; margin-bottom:10px"><code>POST /middleware/guardian/validate</code></div>
+
+        <div class="muted">Outros endpoints (MVP):</div>
+        <ul>
+          <li><code>POST /billing/success-fee/payment_compensated</code></li>
+          <li><code>POST /portal/terms/success-fee/accept</code></li>
+        </ul>
+
+        <div class="muted" style="margin-top:14px">Docs/versionamento:</div>
+        <ul>
+          <li><a href="https://github.com/fiboops-art/synora-middleware-vercel" target="_blank" rel="noreferrer">GitHub repo</a></li>
+          <li><code>/guardian/CORE.md</code> e <code>/guardian/stages.json</code></li>
+        </ul>
+      </div>
+    </div>
+  </body>
+</html>
