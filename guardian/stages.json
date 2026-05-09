@@ -1,0 +1,49 @@
+{
+  "policy_version": "guardian-core-1.0",
+  "stages": {
+    "A": {
+      "stage_version": "stage-a-1.0",
+      "name": "Info/Simulação (baixo risco)",
+      "requires": ["metadata.tenant_id", "metadata.purpose"],
+      "forbids": ["MISLEADING_PROMISE", "COERCION_LANGUAGE"],
+      "pii": { "default": "mask" }
+    },
+    "B": {
+      "stage_version": "stage-b-1.0",
+      "name": "Pré-proposta / Coleta guiada",
+      "requires": ["metadata.tenant_id", "metadata.purpose"],
+      "forbids": ["COERCION_LANGUAGE", "MISLEADING_PROMISE", "EXCESSIVE_COLLECTION"],
+      "proposal_required": true
+    },
+    "C": {
+      "stage_version": "stage-c-1.0",
+      "name": "Proposta/Termo/Assinatura (alto risco)",
+      "requires": ["metadata.tenant_id", "metadata.purpose"],
+      "forbids": ["COERCION_LANGUAGE", "MISLEADING_PROMISE"],
+      "proposal_required": true,
+      "numeric_consistency_required": true
+    },
+    "D": {
+      "stage_version": "stage-d-1.0",
+      "name": "data_access / data_export",
+      "requires": [
+        "metadata.tenant_id",
+        "metadata.purpose",
+        "request.scope",
+        "request.subject",
+        "request.retention",
+        "request.masking"
+      ],
+      "recommends": ["request.operation"],
+      "auto_block": [
+        "EXPORT_MASS_REQUEST",
+        "RAW_PII_REQUEST",
+        "AUDIT_BYPASS_ATTEMPT",
+        "TENANT_VIOLATION",
+        "RETENTION_MISSING"
+      ],
+      "default_decision": "APPROVED_WITH_REDACTIONS"
+    }
+  }
+}
+

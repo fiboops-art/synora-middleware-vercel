@@ -1,0 +1,26 @@
+{
+  "stage": "D",
+  "metadata": {
+    "tenant_id": "CREDOR-001",
+    "purpose": "contato_operacional_pos_acordo",
+    "correlation_id": "REQ-EXAMPLE-001"
+  },
+  "request": {
+    "operation": "export",
+    "scope": {
+      "fields": [
+        "case.id",
+        "case.status",
+        "debtor.name",
+        "contact.whatsappE164"
+      ]
+    },
+    "subject": {
+      "caseId": "CASE-2805"
+    },
+    "retention": "30d",
+    "masking": true,
+    "notes": "Export limitado para contato operacional com consentimento e trilha auditável."
+  }
+}
+

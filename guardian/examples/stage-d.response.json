@@ -1,0 +1,38 @@
+{
+  "status": "APPROVED_WITH_REDACTIONS",
+  "stage": "D",
+  "confidence": 0.86,
+  "risk_score": 18,
+  "reason_codes": ["RAW_PII_REQUEST"],
+  "issues": [],
+  "required_actions": [
+    {
+      "action": "export_with_masking_only",
+      "reason": "Dados de contato só podem ser exportados mascarados por padrão",
+      "fields": ["request.masking"]
+    }
+  ],
+  "redactions": [
+    {
+      "field": "contact.whatsappE164",
+      "rule": "mask",
+      "reason": "Minimização de dados e proteção contra vazamento"
+    }
+  ],
+  "allowed_scope": {
+    "fields": ["case.id", "case.status", "debtor.name", "contact.whatsappE164"]
+  },
+  "safe_content": null,
+  "audit_log": {
+    "request_id": "REQ-EXAMPLE-001",
+    "correlation_id": "REQ-EXAMPLE-001",
+    "tenant_id": "CREDOR-001",
+    "purpose": "contato_operacional_pos_acordo",
+    "inputs_fingerprint": "sha256:...",
+    "policy_version": "guardian-core-1.0",
+    "stage_version": "stage-d-1.0",
+    "timestamp": "2026-05-08T22:00:00.000Z",
+    "notes": "Approved with masking"
+  }
+}
+
