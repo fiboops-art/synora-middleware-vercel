@@ -170,3 +170,31 @@ curl -sS -X POST "https://synora-guardian.vercel.app/portal/terms/success-fee/ac
     "accepted_at":"2026-05-07T12:00:00.000Z"
   }'
 ```
+
+### Stage D — data_access / data_export (MVP)
+
+```bash
+curl -sS -X POST "https://synora-guardian.vercel.app/middleware/guardian/validate" \
+  -H 'content-type: application/json' \
+  -d '{
+    "stage":"D",
+    "content":"Solicito exportação limitada para contato operacional.",
+    "metadata":{
+      "tenant_id":"CREDOR-001",
+      "purpose":"contato_operacional_pos_acordo",
+      "content_type":"application/json",
+      "source":"portal",
+      "locale":"pt-BR",
+      "correlation_id":"REQ-EXAMPLE-001"
+    },
+    "request":{
+      "operation":"export",
+      "scope":{
+        "fields":["case.id","case.status","debtor.name","contact.whatsappE164"]
+      },
+      "subject":{ "caseId":"CASE-2805" },
+      "retention":"30d",
+      "masking":true
+    }
+  }'
+```

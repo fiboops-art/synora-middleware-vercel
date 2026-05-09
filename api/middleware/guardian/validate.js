@@ -3,7 +3,7 @@ const { parseJsonBody, sendJson } = require('../../../src/lib/http');
 const { audit, auditError } = require('../../../src/lib/audit');
 const { validateWithGuardian } = require('../../../src/lib/openclawGuardian');
 
-const STAGES = new Set(['A', 'B', 'C']);
+const STAGES = new Set(['A', 'B', 'C', 'D']);
 
 function getAllowedOrigins() {
   const raw = (process.env.ALLOWED_ORIGINS || '').trim();
@@ -30,13 +30,15 @@ function setCors(req, res) {
   res.setHeader('access-control-allow-methods', 'POST, OPTIONS');
 }
 
-function stdResponse({ status, risk_score, issues, required_actions, safe_content, audit_log, correlation_id }) {
+function stdResponse({ status, risk_score, issues, required_actions, safe_content, audit_log, correlation_id, redactions = [], allowed_scope = null }) {
   return {
     status,
     risk_score,
     issues,
     required_actions,
     safe_content,
+    redactions,
+    allowed_scope,
     audit_log,
     correlation_id,
   };
@@ -111,6 +113,25 @@ function numericClose(a, b, relTol = 0.02) {
   return Math.abs(x - y) / denom <= relTol;
 }
 
+function isLikelyPiiField(field) {
+  const f = String(field || '').toLowerCase();
+  return (
+    f.includes('cpf') ||
+    f.includes('document') ||
+    f.includes('email') ||
+    f.includes('phone') ||
+    f.includes('whatsapp')
+  );
+}
+
+function maskFieldValue(field) {
+  const f = String(field || '').toLowerCase();
+  if (f.includes('email')) return 'mask_email';
+  if (f.includes('whatsapp') || f.includes('phone')) return 'mask_phone';
+  if (f.includes('cpf') || f.includes('document')) return 'mask_document';
+  return 'mask';
+}
+
 module.exports = async function handler(req, res) {
   const start = Date.now();
   const correlationId = req.headers['x-correlation-id'] || crypto.randomUUID();
@@ -155,6 +176,7 @@ module.exports = async function handler(req, res) {
   const metadata = body?.metadata;
   const proposal = body?.proposal;
   const debtor = body?.debtor;
+  const request = body?.request;
 
   const rulesTriggered = [];
   const decisionPath = [];
@@ -222,6 +244,121 @@ module.exports = async function handler(req, res) {
         riskScore = Math.max(riskScore, 30);
       }
     }
+  }
+
+  // Stage D: data_access / data_export
+  if (stage === 'D') {
+    decisionPath.push('stage_D');
+
+    // Required fields
+    const missingD = requireFields(body, [
+      'metadata.tenant_id',
+      'metadata.purpose',
+      'request.scope',
+      'request.subject',
+      'request.retention',
+      'request.masking',
+    ]);
+
+    if (missingD.length) {
+      rulesTriggered.push('stageD_missing_fields');
+      for (const f of missingD) issues.push(issue('MISSING_FIELD', `Campo obrigatório ausente: ${f}`, 'high', f));
+      requiredActions.push('Enviar payload Stage D completo (tenant_id, purpose, scope, subject, retention, masking)');
+      riskScore = Math.max(riskScore, 95);
+    }
+
+    // Basic tenant isolation: require tenant_id (we can't validate tenant match yet in MVP)
+    if (!metadata?.tenant_id) {
+      rulesTriggered.push('stageD_missing_tenant_id');
+      issues.push(issue('MISSING_TENANT_ID', 'metadata.tenant_id é obrigatório (isolamento de tenant)', 'critical', 'metadata.tenant_id'));
+      requiredActions.push('Informar metadata.tenant_id');
+      riskScore = Math.max(riskScore, 100);
+    }
+
+    // Retention must be non-empty (e.g. 30d)
+    if (request && typeof request.retention === 'string' && !request.retention.trim()) {
+      rulesTriggered.push('stageD_retention_missing');
+      issues.push(issue('RETENTION_MISSING', 'request.retention é obrigatório (prazo de retenção)', 'high', 'request.retention'));
+      requiredActions.push('Definir request.retention (ex.: "30d")');
+      riskScore = Math.max(riskScore, 95);
+    }
+
+    // Mass export heuristic: no subject identifiers and scope is broad
+    const subject = request?.subject;
+    const hasSubjectId = !!(subject?.caseId || subject?.customerId || subject?.debtId || subject?.contractId);
+    const fields = request?.scope?.fields;
+    const fieldCount = Array.isArray(fields) ? fields.length : 0;
+    const isAggregate = !!subject?.aggregate || !!subject?.all || !hasSubjectId;
+    if (isAggregate && fieldCount >= 6) {
+      rulesTriggered.push('stageD_mass_export');
+      issues.push(issue('EXPORT_MASS_REQUEST', 'Pedido agregado/em massa sem justificativa formal (Stage D)', 'critical', 'request.subject'));
+      requiredActions.push('Restringir request.subject a um caso/cliente ou justificar formalmente agregação');
+      riskScore = Math.max(riskScore, 100);
+    }
+
+    // Raw PII request handling
+    const masking = request?.masking;
+    const piiFields = Array.isArray(fields) ? fields.filter(isLikelyPiiField) : [];
+    const redactions = [];
+    let allowed_scope = null;
+
+    if (piiFields.length) {
+      if (masking === false) {
+        rulesTriggered.push('stageD_raw_pii_request');
+        issues.push(issue('RAW_PII_REQUEST', 'Solicitação de PII cru sem masking (Stage D)', 'critical', 'request.masking'));
+        requiredActions.push('Definir request.masking=true ou remover campos de PII do escopo');
+        riskScore = Math.max(riskScore, 100);
+      } else {
+        rulesTriggered.push('stageD_pii_with_masking');
+        for (const f of piiFields) {
+          redactions.push({ field: f, rule: 'mask', reason: `Minimização e anti-vazamento (${maskFieldValue(f)})` });
+        }
+        allowed_scope = { fields: Array.isArray(fields) ? fields : [] };
+        riskScore = Math.max(riskScore, 20);
+      }
+    } else {
+      allowed_scope = { fields: Array.isArray(fields) ? fields : [] };
+    }
+
+    if (issues.length) {
+      const out = stdResponse({
+        status: 'BLOCKED',
+        risk_score: Math.max(riskScore, 90),
+        issues,
+        required_actions: requiredActions,
+        safe_content: null,
+        redactions,
+        allowed_scope,
+        audit_log: { rules_triggered: rulesTriggered, decision_path: decisionPath },
+        correlation_id,
+      });
+      audit('guardian.validate.decision', {
+        correlationId: correlation_id,
+        status: out.status,
+        rules_triggered: rulesTriggered,
+      });
+      return sendJson(res, 200, out);
+    }
+
+    // Default: approve with redactions if any
+    const out = stdResponse({
+      status: redactions.length ? 'APPROVED_WITH_ADJUSTMENTS' : 'APPROVED',
+      risk_score: redactions.length ? Math.max(10, riskScore) : 0,
+      issues: [],
+      required_actions: redactions.length ? ['Exportar com masking (redactions) aplicado'] : [],
+      safe_content: null,
+      redactions,
+      allowed_scope,
+      audit_log: { rules_triggered: rulesTriggered, decision_path: decisionPath },
+      correlation_id,
+    });
+
+    audit('guardian.validate.audit', {
+      correlationId: correlation_id,
+      rules_triggered: out.audit_log.rules_triggered,
+    });
+
+    return sendJson(res, 200, out);
   }
 
   // Stage B: before_send
@@ -324,6 +461,7 @@ module.exports = async function handler(req, res) {
     stage,
     debtor,
     proposal,
+    request,
     user_profile: body?.user_profile,
     context: body?.context
   };
