@@ -283,17 +283,68 @@ module.exports = async function handler(req, res) {
       riskScore = Math.max(riskScore, 95);
     }
 
-    // Mass export heuristic: no subject identifiers and scope is broad
+    // Mass export heuristic: aggregation without single-subject identifiers and broad scope.
     const subject = request?.subject;
     const hasSubjectId = !!(subject?.caseId || subject?.customerId || subject?.debtId || subject?.contractId);
     const fields = request?.scope?.fields;
     const fieldCount = Array.isArray(fields) ? fields.length : 0;
     const isAggregate = !!subject?.aggregate || !!subject?.all || !hasSubjectId;
-    if (isAggregate && fieldCount >= 6) {
-      rulesTriggered.push('stageD_mass_export');
-      issues.push(issue('EXPORT_MASS_REQUEST', 'Pedido agregado/em massa sem justificativa formal (Stage D)', 'critical', 'request.subject'));
-      requiredActions.push('Restringir request.subject a um caso/cliente ou justificar formalmente agregação');
-      riskScore = Math.max(riskScore, 100);
+    const justification = request?.justification;
+    const approver = request?.approver;
+    const hasJustification = !!justification && typeof justification === 'object';
+    const hasApprover = !!approver && typeof approver === 'object';
+
+    const justificationMissing = [];
+    if (isAggregate) {
+      // If aggregate, require structured justification + approver + masking=true
+      if (!hasJustification) {
+        justificationMissing.push('request.justification');
+      } else {
+        for (const f of ['business_reason', 'legal_basis', 'data_minimization', 'audience']) {
+          if (!justification?.[f]) justificationMissing.push(`request.justification.${f}`);
+        }
+      }
+      if (!hasApprover) {
+        justificationMissing.push('request.approver');
+      } else {
+        for (const f of ['approver_id', 'approver_role']) {
+          if (!approver?.[f]) justificationMissing.push(`request.approver.${f}`);
+        }
+      }
+
+      if (request?.masking !== true) {
+        justificationMissing.push('request.masking');
+      }
+
+      // Also require scope without raw PII fields for aggregate
+      const piiFieldsAgg = Array.isArray(fields) ? fields.filter(isLikelyPiiField) : [];
+      if (piiFieldsAgg.length) {
+        rulesTriggered.push('stageD_aggregate_contains_pii');
+        issues.push(issue('RAW_PII_REQUEST', 'Export agregado não pode incluir campos de PII (mesmo com masking) — use métricas/IDs', 'critical', 'request.scope.fields'));
+        requiredActions.push('Remover PII do scope.fields para export agregado');
+        riskScore = Math.max(riskScore, 100);
+      }
+
+      if (justificationMissing.length) {
+        rulesTriggered.push('stageD_mass_export');
+        issues.push(issue('EXPORT_MASS_REQUEST', 'Pedido agregado/em massa exige justificativa formal + aprovar (Stage D)', 'critical', 'request.subject'));
+        for (const f of justificationMissing) {
+          issues.push(issue('MISSING_FIELD', `Campo obrigatório ausente para agregação: ${f}`, 'high', f));
+        }
+        requiredActions.push('Para export agregado: preencher request.justification + request.approver + masking=true e remover PII do scope');
+        riskScore = Math.max(riskScore, 100);
+      } else {
+        // Aggregate allowed (still may be approved with redactions for any non-PII fields)
+        rulesTriggered.push('stageD_aggregate_approved_with_justification');
+        riskScore = Math.max(riskScore, 25);
+      }
+    } else {
+      // Non-aggregate broad scope (still caution)
+      if (fieldCount >= 10) {
+        rulesTriggered.push('stageD_scope_broad');
+        requiredActions.push('Recomendação: reduzir scope.fields ao mínimo necessário');
+        riskScore = Math.max(riskScore, 35);
+      }
     }
 
     // Raw PII request handling

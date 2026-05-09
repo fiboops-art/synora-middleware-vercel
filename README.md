@@ -198,3 +198,43 @@ curl -sS -X POST "https://synora-guardian.vercel.app/middleware/guardian/validat
     }
   }'
 ```
+
+### Stage D — export agregado (permitido SOMENTE com justificativa + approver)
+
+```bash
+curl -sS -X POST "https://synora-guardian.vercel.app/middleware/guardian/validate" \
+  -H 'content-type: application/json' \
+  -d '{
+    "stage":"D",
+    "content":"Export agregado para relatório interno.",
+    "metadata":{
+      "tenant_id":"CREDOR-001",
+      "purpose":"relatorio_mensal_recuperacao",
+      "content_type":"application/json",
+      "source":"portal",
+      "locale":"pt-BR",
+      "correlation_id":"REQ-D-AGG-001"
+    },
+    "request":{
+      "operation":"export",
+      "scope":{
+        "fields":["case.id","case.status","case.amount","agreement.approvedAt"]
+      },
+      "subject":{ "aggregate":true },
+      "retention":"30d",
+      "masking":true,
+      "justification":{
+        "business_reason":"Relatório mensal de performance (KPI de recuperação e quebra).",
+        "legal_basis":"legitimate_interest",
+        "data_minimization":"Sem PII; somente dados do caso e métricas agregáveis.",
+        "audience":"time_financeiro_interno",
+        "expected_volume":"~5k casos",
+        "ticket_id":"JIRA-1234"
+      },
+      "approver":{
+        "approver_id":"CREDOR-001:compliance:ana-001",
+        "approver_role":"compliance_officer"
+      }
+    }
+  }'
+```
