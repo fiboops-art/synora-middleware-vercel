@@ -13,6 +13,23 @@
         background: #f8fafc;
         color: #0f172a;
       }
+      .bg {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: -1;
+      }
+      .bg .img {
+        position: absolute;
+        inset: 0;
+        background: url('/bg-synora-calm.svg') center/cover no-repeat;
+        opacity: 0.9;
+      }
+      .bg .veil {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to bottom, rgba(255,255,255,0.62), rgba(255,255,255,0.35), rgba(255,255,255,0.62));
+      }
       .wrap { max-width: 860px; margin: 0 auto; padding: 48px 20px; }
       .card {
         background: rgba(255,255,255,0.9);
@@ -27,9 +44,31 @@
       code { background: rgba(2,8,23,0.06); padding: 2px 6px; border-radius: 8px; }
       a { color: #0f172a; }
       ul { margin: 10px 0 0 18px; }
+      .actions { display:flex; gap:10px; flex-wrap: wrap; margin-top: 14px; }
+      .btn {
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        gap:8px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(15,23,42,0.10);
+        background: rgba(255,255,255,0.72);
+        text-decoration:none;
+        font-weight: 650;
+        font-size: 14px;
+        box-shadow: 0 10px 30px rgba(2,8,23,0.06);
+      }
+      .btn:hover { background: rgba(255,255,255,0.86); }
+      .btn.primary { background: rgba(15,23,42,0.92); color: white; border-color: rgba(15,23,42,0.35); }
+      .btn.primary:hover { background: rgba(15,23,42,0.98); }
     </style>
   </head>
   <body>
+    <div class="bg" aria-hidden="true">
+      <div class="img"></div>
+      <div class="veil"></div>
+    </div>
     <div class="wrap">
       <div class="card">
         <div class="brand">
@@ -42,6 +81,12 @@
 
         <div class="muted" style="margin-bottom:12px">Endpoint principal:</div>
         <div style="font-weight:600; margin-bottom:10px"><code>POST /middleware/guardian/validate</code></div>
+
+        <div class="actions">
+          <a class="btn primary" href="https://hoppscotch.io/" target="_blank" rel="noreferrer">Testar no Hoppscotch</a>
+          <a class="btn" href="https://github.com/fiboops-art/synora-middleware-vercel/blob/main/guardian/CORE.md" target="_blank" rel="noreferrer">Docs (CORE.md)</a>
+          <a class="btn" href="https://github.com/fiboops-art/synora-middleware-vercel/blob/main/guardian/stages.json" target="_blank" rel="noreferrer">Stages (JSON)</a>
+        </div>
 
         <div class="muted">Outros endpoints (MVP):</div>
         <ul>
