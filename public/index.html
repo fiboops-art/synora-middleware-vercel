@@ -62,6 +62,12 @@
       .btn:hover { background: rgba(255,255,255,0.86); }
       .btn.primary { background: rgba(15,23,42,0.92); color: white; border-color: rgba(15,23,42,0.35); }
       .btn.primary:hover { background: rgba(15,23,42,0.98); }
+
+      @media (max-width: 560px) {
+        .wrap { padding: 28px 16px; }
+        .actions { flex-direction: column; gap: 8px; }
+        .btn { width: 100%; }
+      }
     </style>
   </head>
   <body>
@@ -79,8 +85,8 @@
           </div>
         </div>
 
-        <div class="muted" style="margin-bottom:12px">Endpoint principal:</div>
-        <div style="font-weight:600; margin-bottom:10px"><code>POST /middleware/guardian/validate</code></div>
+        <div class="muted" style="margin-bottom:10px">Endpoint principal:</div>
+        <div style="font-weight:600; margin-bottom:8px"><code>POST /middleware/guardian/validate</code></div>
 
         <div class="actions">
           <a class="btn primary" href="https://hoppscotch.io/" target="_blank" rel="noreferrer">Testar no Hoppscotch</a>
@@ -88,7 +94,7 @@
           <a class="btn" href="https://github.com/fiboops-art/synora-middleware-vercel/blob/main/guardian/stages.json" target="_blank" rel="noreferrer">Stages (JSON)</a>
         </div>
 
-        <div class="muted">Outros endpoints (MVP):</div>
+        <div class="muted" style="margin-top:12px">Outros endpoints (MVP):</div>
         <ul>
           <li><code>POST /billing/success-fee/payment_compensated</code></li>
           <li><code>POST /portal/terms/success-fee/accept</code></li>
