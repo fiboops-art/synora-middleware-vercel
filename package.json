@@ -8,7 +8,8 @@
   },
   "scripts": {
     "dev": "vercel dev",
-    "lint": "node -c api/middleware/guardian/validate.js && node -c src/lib/openclawGuardian.js && node -c src/lib/audit.js && node -c src/lib/http.js"
+    "lint": "node -c api/middleware/guardian/validate.js && node -c src/lib/openclawGuardian.js && node -c src/lib/audit.js && node -c src/lib/http.js",
+    "build": "npm run lint"
   },
   "dependencies": {
     "express": "^4.19.2"
