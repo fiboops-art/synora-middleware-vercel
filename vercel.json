@@ -11,6 +11,10 @@
     {
       "source": "/portal/terms/success-fee/accept",
       "destination": "/api/portal/terms/success-fee/accept"
+    },
+    {
+      "source": "/((?!api/.*).*)",
+      "destination": "/index.html"
     }
   ]
 }
